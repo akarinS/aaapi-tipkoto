@@ -81,12 +81,12 @@ class TipKoto(BaseAAAPI):
                                 if to_screen_name != 'tipkotone':
                                     reply_message = '\n'.join(['{name}さんから {to_name}さんへ お心付けです！ {amount}KOTO'.format(name = name, to_name = to_name, amount = result['amount']),
                                                                '',
-                                                               'txid: {txid}'.format(txid = result['txid'])])
+                                                               self.get_random_string()])
 
                                 else:
                                     reply_message = '\n'.join(['{name}さんから {amount}KOTO いただきました！ ありがとうございます！'.format(name = name, amount = result['amount']),
                                                                '',
-                                                               'txid: {txid}'.format(txid = result['txid'])])
+                                                               self.get_random_string()])
 
                             elif result['status'] == 'failed':
                                 reply_message = '\n'.join(['失敗しました・・・',
@@ -270,7 +270,7 @@ class TipKoto(BaseAAAPI):
                               'deposit', '入金',
                               'address', 'アドレス',
                               'withdraw', '出金',
-                              'followme', 'フォローミー',
+                              'followme', 'フォローミー', 'フォローして',
                               'help', 'ヘルプ']:
                 return command
 
