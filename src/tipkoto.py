@@ -251,6 +251,9 @@ class TipKoto(BaseAAAPI):
                                        '',
                                        self.get_random_string()])
 
+            if from_tweet:
+                reply_message = '@{screen_name} {reply_message}'.format(screen_name = screen_name, reply_message = reply_message)
+
             return reply_message
 
         return None
