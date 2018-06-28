@@ -1,3 +1,5 @@
+[注意はこちら](https://github.com/akarinS/aaapi-tipkoto)
+
 使い方
 ===
 
