@@ -30,36 +30,40 @@ class TipKoto(BaseAAAPI):
         database.close()
 
     def tweet_create_events(self, data):
-        text = data['tweet_create_events'][0]['text']
-        user_id = data['tweet_create_events'][0]['user']['id_str']
-        name = data['tweet_create_events'][0]['user']['name']
-        screen_name = data['tweet_create_events'][0]['user']['screen_name']
-        status_id = data['tweet_create_events'][0]['id_str']
+        for event in data['tweet_create_events']:
+            text = event['text']
+            user_id = event['user']['id_str']
+            name = event['user']['name']
+            screen_name = event['user']['screen_name']
+            status_id = event['id_str']
 
-        if screen_name != 'tipkotone' and not re.findall('(^RT |^QT | RT | QT )', text):
-            reply_message = self.execute(text, user_id, name, screen_name, from_tweet = True)
-
-            if reply_message is not None:
-                reply_message = reply_message if len(reply_message) <= 140 else reply_message[: - (len(reply_message) - 140)]   # 140文字以下にする
-                self.twitter.tweet(reply_message, status_id)
-
-    def direct_message_events(self, data):
-        if data['direct_message_events'][0]['type'] == 'message_create':
-            text = '@tipkotone ' + data['direct_message_events'][0]['message_create']['message_data']['text']
-            user_id = data['direct_message_events'][0]['message_create']['sender_id']
-            name = data['users'][user_id]['name']
-            screen_name = data['users'][user_id]['screen_name']
-
-            if screen_name != 'tipkotone':
-                reply_message = self.execute(text, user_id, name, screen_name, from_tweet = False)
+            if screen_name != 'tipkotone' and not re.findall('(^RT |^QT | RT | QT )', text):
+                reply_message = self.execute(text, user_id, name, screen_name, from_tweet = True)
 
                 if reply_message is not None:
-                    self.twitter.dm(reply_message, user_id)
+                    reply_message = reply_message if len(reply_message) <= 140 else reply_message[: - (len(reply_message) - 140)]   # 140文字以下にする
+                    self.twitter.tweet(reply_message, status_id)
+
+    def direct_message_events(self, data):
+        for event in data['direct_message_events']:
+            if event['type'] == 'message_create':
+                text = '@tipkotone ' + event['message_create']['message_data']['text']
+                user_id = event['message_create']['sender_id']
+                name = data['users'][user_id]['name']
+                screen_name = data['users'][user_id]['screen_name']
+
+                if screen_name != 'tipkotone':
+                    reply_message = self.execute(text, user_id, name, screen_name, from_tweet = False)
+
+                    if reply_message is not None:
+                        self.twitter.dm(reply_message, user_id)
 
     def execute(self, text, user_id, name, screen_name, from_tweet = None):
         command = self.get_command(text)
 
         if command[0] in ['tip', '投げ銭', '投銭', 'send', '送金']:
+            result = {'status': 'none'}     # エラー回避用
+
             if len(command) >= 3:
                 if command[1].startswith('@'):
                     to_screen_name = command[1][1:]
@@ -110,6 +114,11 @@ class TipKoto(BaseAAAPI):
 
                             elif result['status'] == 'timeout':
                                 reply_message = '\n'.join(['待ち時間が長すぎたので中断されました・・・',
+                                                           '',
+                                                           self.get_random_string()])
+
+                            elif result['status'] == 'same':
+                                reply_message = '\n'.join(['自分自身には投げ銭できません・・・',
                                                            '',
                                                            self.get_random_string()])
 
@@ -212,6 +221,11 @@ class TipKoto(BaseAAAPI):
 
                         elif result['status'] == 'timeout':
                             reply_message = '\n'.join(['待ち時間が長すぎたので中断されました・・・',
+                                                       '',
+                                                       self.get_random_string()])
+
+                        elif result['status'] == 'same':
+                            reply_message = '\n'.join(['出金元と同じアドレスには出金できません・・・',
                                                        '',
                                                        self.get_random_string()])
 
@@ -350,6 +364,10 @@ class TipKoto(BaseAAAPI):
         return amount_str
 
     def send_koto(self, from_address, to_address, amount):
+        if from_address == to_address:
+            result = {'status': 'same'}
+            return result
+
         transaction_hash = hashlib.sha256(self.get_random_string(64).encode()).hexdigest()
 
         database = sqlite3.connect('TRANSACTIONS_DATABASE', timeout = 30)
@@ -368,7 +386,7 @@ class TipKoto(BaseAAAPI):
                 if transaction_hash == head_transaction_hash:
                     break
 
-                sleep(10)
+                sleep(5)
 
             fee = Decimal('0.0001')
             while True:
@@ -391,7 +409,7 @@ class TipKoto(BaseAAAPI):
                         change = balance - amount - fee
 
                     else:
-                        sleep(10)
+                        sleep(5)
                         continue
 
                     amount_limit = Decimal('5.4e-7')
@@ -422,7 +440,7 @@ class TipKoto(BaseAAAPI):
 
                             break
 
-                        sleep(5)
+                        sleep(1)
 
                 break
 
