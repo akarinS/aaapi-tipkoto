@@ -1,18 +1,29 @@
 from flask import Flask, request
-from signature import Signature
-from config import consumer_key, consumer_secret, access_token, access_token_secret
-from config import rpc_user, rpc_password, rpc_port
-from tipkoto import TipKoto
-from threading import Thread
 import json
+import base64
+import hashlib
+import hmac
+import socket
+from config import consumer_secret, server_port
 
 application = Flask('twitter-aaapi-bot')
-signer = Signature(consumer_secret)
+
+def sign(msg):
+    consumer_secret = consumer_secret.encode()
+    if type(msg) == str:
+        msg = msg.encode()
+
+    sha256_hash_digest = hmac.new(consumer_secret, msg = msg, digestmod = hashlib.sha256).digest()
+
+    return 'sha256=' + base64.b64encode(sha256_hash_digest).decode()
+
+def validate(signature, data):
+    return hmac.compare_digest(signature, sign(data))
 
 @application.route('/twitter', methods = ['GET'])
-def get():
+def crc():
     if 'crc_token' in request.args and len(request.args.get('crc_token')) == 48:
-        response_token = signer.get_response_token(request.args.get('crc_token').encode())
+        response_token = sign(request.args.get('crc_token'))
         response = {'response_token': response_token}
 
         return json.dumps(response), 200, {'Content-Type': 'application/json'}
@@ -20,14 +31,12 @@ def get():
     return 'No Content', 204, {'Content-Type': 'text/plain'}
 
 @application.route('/twitter', methods = ['POST'])
-def post():
+def send_data():
     if 'X-Twitter-Webhooks-Signature' in request.headers:
         if signer.validate(request.headers.get('X-Twitter-Webhooks-Signature'), request.data):
-            data = request.json
-
-            bot = TipKoto(consumer_key, consumer_secret, access_token, access_token_secret, rpc_user, rpc_password, rpc_port)
-            thread = Thread(target = bot.run, args = (data,))
-            thread.start()
+            with socket.socket() as s:
+                s.connect(('localhost', server_port))
+                s.send(request.data)
 
             return 'OK', 200, {'Content-Type': 'text/plain'}
 
