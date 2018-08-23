@@ -9,3 +9,6 @@ rpc_user = 'RPC_USER'
 rpc_password = 'RPC_PASSWORD'
 rpc_port = '8432'
 
+# runbot config
+server_port = 8888
+

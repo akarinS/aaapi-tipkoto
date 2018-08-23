@@ -5,7 +5,7 @@ class KotoRpc(object):
 
     def __init__(self, rpc_user, rpc_password, rpc_port = "8432"):
         self.auth = (rpc_user, rpc_password)
-        self.url = "http://127.0.0.1:" + rpc_port
+        self.url = "localhost:" + rpc_port
 
     def call(self, method, *params):
         data = json.dumps({"jsonrpc": "1.0",

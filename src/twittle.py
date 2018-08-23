@@ -2,8 +2,11 @@ from requests_oauthlib import OAuth1Session
 
 class Twittle(object):
 
-    def __init__(self, consumer_key, consumer_secret, access_token, access_token_secret):
-        self.twitter = OAuth1Session(consumer_key, consumer_secret, access_token, access_token_secret)
+    def __init__(self,
+                 consumer_key, consumer_secret
+                 access_token, access_token_secret):
+        self.twitter = OAuth1Session(consumer_key, consumer_secret,
+                                     access_token, access_token_secret)
 
     def tweet(self, status, in_reply_to_status_id = None):
         params = {'status': status}
