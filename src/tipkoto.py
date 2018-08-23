@@ -11,7 +11,10 @@ from time import sleep, time
 
 class TipKoto(BaseAAAPI):
 
-    def __init__(self, consumer_key, consumer_secret, access_token, access_token_secret, rpc_user, rpc_password, rpc_port = '8432'):
+    def __init__(self,
+                 consumer_key, consumer_secret
+                 access_token, access_token_secret
+                 rpc_user, rpc_password, rpc_port = '8432'):
         self.twitter = Twittle(consumer_key, consumer_secret, access_token, access_token_secret)
         self.koto = KotoRpc(rpc_user, rpc_password, rpc_port)
         self.database_init()
